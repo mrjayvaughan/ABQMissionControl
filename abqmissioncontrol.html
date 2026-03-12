@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Albuquerque Mission Control</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+background:#000;
+margin:0;
+font-family:Arial;
+color:white;
+}
+
+#dashboard{
+width:100%;
+height:100%;
+display:flex;
+}
+
+#left{
+width:60%;
+text-align:center;
+}
+
+#right{
+width:40%;
+text-align:center;
+}
+
+#weather{
+color:#1E5BB8;
+font-size:40px;
+margin-top:20px;
+}
+
+#updated{
+color:#888;
+font-size:16px;
+margin-bottom:20px;
+}
+
+#clock{
+font-size:180px;
+color:#00ff00;
+font-family:'Orbitron', monospace;
+}
+
+#date{
+font-size:32px;
+color:#2e6b2e;
+margin-bottom:30px;
+}
+
+#forecast{
+display:flex;
+justify-content:center;
+}
+
+.day{
+margin:10px;
+text-align:center;
+}
+
+.high{
+font-size:24px;
+font-weight:bold;
+}
+
+.low{
+opacity:.7;
+}
+
+#details{
+display:grid;
+grid-template-columns:repeat(3,120px);
+gap:20px;
+justify-content:center;
+}
+
+.label{
+color:#aaa;
+font-size:14px;
+}
+
+.value{
+font-size:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="dashboard">
+
+<div id="left">
+
+<div id="weather">Loading temperature...</div>
+<div id="updated"></div>
+
+<div id="clock">
+<span id="hour"></span>:
+<span id="minute"></span>
+<span id="ampm"></span>
+</div>
+
+<div id="date"></div>
+
+<div id="forecast"></div>
+
+</div>
+
+<div id="right">
+
+<div id="details">
+
+<div>
+<div class="label">Wind</div>
+<div class="value" id="wind"></div>
+</div>
+
+<div>
+<div class="label">Feels Like</div>
+<div class="value" id="feels"></div>
+</div>
+
+<div>
+<div class="label">AQI</div>
+<div class="value" id="aqi"></div>
+</div>
+
+<div>
+<div class="label">Sunrise</div>
+<div class="value" id="sunrise"></div>
+</div>
+
+<div>
+<div class="label">Sunset</div>
+<div class="value" id="sunset"></div>
+</div>
+
+<div>
+<div class="label">Moon</div>
+<div class="value" id="moon"></div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* CLOCK */
+
+function updateClock(){
+
+var now=new Date();
+
+var hours=now.getHours();
+var minutes=now.getMinutes();
+
+var ampm="AM";
+
+if(hours>=12) ampm="PM";
+
+hours=hours%12;
+if(hours===0) hours=12;
+
+if(minutes<10) minutes="0"+minutes;
+
+document.getElementById("hour").innerHTML=hours;
+document.getElementById("minute").innerHTML=minutes;
+document.getElementById("ampm").innerHTML=" "+ampm;
+
+var date=now.toDateString();
+
+document.getElementById("date").innerHTML=date;
+
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+
+
+/* AQI COLOR */
+
+function getAQIColor(aqi){
+
+if(aqi<=50) return "#00e400";
+if(aqi<=100) return "#ffff00";
+if(aqi<=150) return "#ff7e00";
+if(aqi<=200) return "#ff0000";
+if(aqi<=300) return "#8f3f97";
+return "#7e0023";
+
+}
+
+
+
+/* API REQUEST */
+
+function request(url,callback){
+
+var xhr=new XMLHttpRequest();
+xhr.onreadystatechange=function(){
+
+if(xhr.readyState==4 && xhr.status==200){
+callback(JSON.parse(xhr.responseText));
+}
+
+};
+
+xhr.open("GET",url,true);
+xhr.send();
+
+}
+
+
+
+/* WEATHER */
+
+function loadWeather(){
+
+var weatherURL="https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto";
+
+var airURL="https://air-quality-api.open-meteo.com/v1/air-quality?latitude=35.0844&longitude=-106.6504&current=us_aqi";
+
+request(weatherURL,function(weatherData){
+
+document.getElementById("weather").innerHTML="Albuquerque "+Math.round(weatherData.current_weather.temperature)+"°F";
+
+document.getElementById("wind").innerHTML=Math.round(weatherData.current_weather.windspeed)+" mph";
+
+document.getElementById("feels").innerHTML=Math.round(weatherData.current_weather.temperature)+"°F";
+
+var sunrise=new Date(weatherData.daily.sunrise[0]).toLocaleTimeString();
+var sunset=new Date(weatherData.daily.sunset[0]).toLocaleTimeString();
+
+document.getElementById("sunrise").innerHTML=sunrise;
+document.getElementById("sunset").innerHTML=sunset;
+
+var forecastHTML="";
+
+for(var i=1;i<6;i++){
+
+var date=new Date(weatherData.daily.time[i]);
+var day=date.toDateString().split(" ")[0];
+
+var high=Math.round(weatherData.daily.temperature_2m_max[i]);
+var low=Math.round(weatherData.daily.temperature_2m_min[i]);
+
+forecastHTML+=
+"<div class='day'>"+
+"<div>"+day+"</div>"+
+"<div class='high'>"+high+"°</div>"+
+"<div class='low'>"+low+"°</div>"+
+"</div>";
+
+}
+
+document.getElementById("forecast").innerHTML=forecastHTML;
+
+});
+
+request(airURL,function(airData){
+
+var aqi=airData.current.us_aqi;
+
+var el=document.getElementById("aqi");
+
+el.innerHTML=aqi;
+el.style.color=getAQIColor(aqi);
+
+});
+
+var now=new Date();
+
+document.getElementById("updated").innerHTML=
+"Updated "+now.toLocaleTimeString();
+
+}
+
+loadWeather();
+
+setInterval(loadWeather,120000);
+
+</script>
+
+</body>
+</html>
