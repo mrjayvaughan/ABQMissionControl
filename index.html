@@ -18,29 +18,60 @@ overflow:hidden;
 #city{
 color:#4da6ff;
 font-size:50px;
-margin-top:20px;
+margin-top:15px;
 }
 
 #temp{
-font-size:60px;
-margin-bottom:20px;
+font-size:70px;
+margin-bottom:10px;
 }
 
 #clock{
-font-size:180px;
+font-size:170px;
 color:#39ff14;
 }
 
 #date{
-font-size:36px;
-margin-bottom:40px;
+font-size:34px;
+margin-bottom:20px;
 }
 
 #forecast{
 position:absolute;
-bottom:20px;
+bottom:10px;
 width:100%;
-font-size:32px;
+text-align:center;
+}
+
+.day{
+display:inline-block;
+width:120px;
+vertical-align:top;
+}
+
+.dayname{
+font-size:20px;
+margin-bottom:5px;
+}
+
+.day img{
+width:64px;
+height:64px;
+}
+
+.high{
+color:#ff4444;
+font-size:22px;
+}
+
+.low{
+color:#66aaff;
+font-size:20px;
+}
+
+.desc{
+font-size:16px;
+color:#cccccc;
 }
 
 </style>
@@ -54,7 +85,7 @@ font-size:32px;
 <div id="clock">--:--</div>
 <div id="date"></div>
 
-<div id="forecast">Loading forecast...</div>
+<div id="forecast"></div>
 
 <script>
 
@@ -62,10 +93,10 @@ font-size:32px;
 
 function updateClock(){
 
-var now = new Date();
+var now=new Date();
 
-var h = now.getHours();
-var m = now.getMinutes();
+var h=now.getHours();
+var m=now.getMinutes();
 
 var ampm="AM";
 
@@ -90,7 +121,7 @@ var xhr=new XMLHttpRequest();
 
 xhr.open(
 "GET",
-"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
+"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
 true
 );
 
@@ -104,19 +135,52 @@ document.getElementById("temp").innerHTML=
 Math.round(data.current_weather.temperature)+"°F";
 
 
+/* WEATHER ICONS */
+
+function icon(code){
+
+if(code==0)return "https://openweathermap.org/img/wn/01d.png";
+if(code==1)return "https://openweathermap.org/img/wn/02d.png";
+if(code==2)return "https://openweathermap.org/img/wn/03d.png";
+if(code==3)return "https://openweathermap.org/img/wn/04d.png";
+if(code>=45 && code<=48)return "https://openweathermap.org/img/wn/50d.png";
+if(code>=51 && code<=67)return "https://openweathermap.org/img/wn/09d.png";
+if(code>=71 && code<=77)return "https://openweathermap.org/img/wn/13d.png";
+if(code>=80 && code<=82)return "https://openweathermap.org/img/wn/10d.png";
+if(code>=95)return "https://openweathermap.org/img/wn/11d.png";
+
+return "https://openweathermap.org/img/wn/01d.png";
+
+}
+
+
 /* FORECAST */
 
-var out="";
-
 var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+var out="";
 
 for(var i=0;i<5;i++){
 
 var d=new Date(data.daily.time[i]);
 
-out+=days[d.getDay()]+" ";
-out+=Math.round(data.daily.temperature_2m_max[i])+"°/";
-out+=Math.round(data.daily.temperature_2m_min[i])+"°   ";
+var day=days[d.getDay()];
+
+var code=data.daily.weathercode[i];
+
+out+="<div class='day'>";
+
+out+="<div class='dayname'>"+day+"</div>";
+
+out+="<img src='"+icon(code)+"'>";
+
+out+="<div class='high'>"+
+Math.round(data.daily.temperature_2m_max[i])+"°</div>";
+
+out+="<div class='low'>"+
+Math.round(data.daily.temperature_2m_min[i])+"°</div>";
+
+out+="</div>";
 
 }
 
