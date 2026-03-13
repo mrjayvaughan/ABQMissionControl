@@ -38,40 +38,29 @@ margin-bottom:20px;
 
 #forecast{
 position:absolute;
-bottom:10px;
+bottom:20px;
 width:100%;
 text-align:center;
 }
 
 .day{
 display:inline-block;
-width:120px;
-vertical-align:top;
+width:110px;
 }
 
 .dayname{
-font-size:20px;
+font-size:22px;
 margin-bottom:5px;
-}
-
-.day img{
-width:64px;
-height:64px;
 }
 
 .high{
 color:#ff4444;
-font-size:22px;
+font-size:26px;
 }
 
 .low{
 color:#66aaff;
-font-size:20px;
-}
-
-.desc{
-font-size:16px;
-color:#cccccc;
+font-size:22px;
 }
 
 </style>
@@ -121,7 +110,7 @@ var xhr=new XMLHttpRequest();
 
 xhr.open(
 "GET",
-"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
+"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
 true
 );
 
@@ -135,25 +124,6 @@ document.getElementById("temp").innerHTML=
 Math.round(data.current_weather.temperature)+"°F";
 
 
-/* WEATHER ICONS */
-
-function icon(code){
-
-if(code==0)return "https://openweathermap.org/img/wn/01d.png";
-if(code==1)return "https://openweathermap.org/img/wn/02d.png";
-if(code==2)return "https://openweathermap.org/img/wn/03d.png";
-if(code==3)return "https://openweathermap.org/img/wn/04d.png";
-if(code>=45 && code<=48)return "https://openweathermap.org/img/wn/50d.png";
-if(code>=51 && code<=67)return "https://openweathermap.org/img/wn/09d.png";
-if(code>=71 && code<=77)return "https://openweathermap.org/img/wn/13d.png";
-if(code>=80 && code<=82)return "https://openweathermap.org/img/wn/10d.png";
-if(code>=95)return "https://openweathermap.org/img/wn/11d.png";
-
-return "https://openweathermap.org/img/wn/01d.png";
-
-}
-
-
 /* FORECAST */
 
 var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -163,16 +133,11 @@ var out="";
 for(var i=0;i<5;i++){
 
 var d=new Date(data.daily.time[i]);
-
 var day=days[d.getDay()];
-
-var code=data.daily.weathercode[i];
 
 out+="<div class='day'>";
 
 out+="<div class='dayname'>"+day+"</div>";
-
-out+="<img src='"+icon(code)+"'>";
 
 out+="<div class='high'>"+
 Math.round(data.daily.temperature_2m_max[i])+"°</div>";
