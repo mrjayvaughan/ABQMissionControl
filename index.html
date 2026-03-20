@@ -2,36 +2,74 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>ABQ Mission Clock</title>
+<title>ABQ Mission Clock FINAL</title>
 
 <style>
 body{
 background:black;color:white;font-family:Arial;text-align:center;margin:0;overflow:hidden;
-transition: transform 1s linear;
 }
-#container{display:flex;flex-direction:column;justify-content:space-between;height:100vh;}
-#top{margin-top:10px;}
-#city{color:#4da6ff;font-size:50px;}
-#temp{font-size:70px;margin-bottom:0;}
-#updated{font-size:18px;color:#888;}
-#middle{flex-grow:1;display:flex;flex-direction:column;justify-content:flex-start;margin-top:20px;}
-#clock{font-size:170px;color:#39ff14;}
-#date{font-size:34px;}
-#bottom{margin-bottom:10px;}
-#forecastUpdated{font-size:16px;color:#777;margin-bottom:5px;}
-.day{display:inline-block;width:110px;}
-.dayname{font-size:22px;margin-bottom:5px;}
-.high{color:#ff4444;font-size:26px;}
-.low{color:#66aaff;font-size:22px;}
+
+/* container */
+#container{
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+height:100vh;
+padding:4px 0;
+}
+
+/* TOP */
+#city{color:#4da6ff;font-size:24px;margin:2px 0;}
+#temp{font-size:44px;margin:0;}
+#conditions{font-size:14px;color:#ccc;margin-top:2px;}
+#wind{font-size:12px;color:#aaa;}
+#updated{font-size:11px;color:#666;opacity:.6;margin-top:2px;}
+
+/* CLOCK */
+#middle{
+flex-grow:1;
+display:flex;
+flex-direction:column;
+justify-content:center;
+margin-top:-10px;
+}
+
+#clock{
+font-size:120px;
+color:#39ff14;
+}
+
+#date{
+font-size:18px;
+margin-top:-10px;
+}
+
+/* FORECAST */
+#forecastUpdated{
+font-size:11px;color:#666;opacity:.6;margin-bottom:2px;
+}
+
+.day{
+display:inline-block;
+width:58px;
+}
+
+.dayname{font-size:13px;}
+.icon{font-size:14px;}
+.high{color:#ff4444;font-size:14px;}
+.low{color:#66aaff;font-size:12px;}
 </style>
 </head>
 
 <body onclick="goFullscreen()">
 
 <div id="container">
-<div id="top">
+
+<div>
 <div id="city">Albuquerque</div>
 <div id="temp">--°F</div>
+<div id="conditions"></div>
+<div id="wind"></div>
 <div id="updated"></div>
 </div>
 
@@ -40,10 +78,11 @@ transition: transform 1s linear;
 <div id="date"></div>
 </div>
 
-<div id="bottom">
+<div>
 <div id="forecastUpdated"></div>
 <div id="forecast"></div>
 </div>
+
 </div>
 
 <script>
@@ -54,19 +93,17 @@ function goFullscreen(){
   else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen();}
 }
 
-setInterval(function(){window.scrollTo(0,1);},30000);
-
 /* CLOCK */
 var showColon=true;
 function updateClock(){
-  var now=new Date(),h=now.getHours(),m=now.getMinutes(),ampm="AM";
+  var n=new Date(),h=n.getHours(),m=n.getMinutes(),ampm="AM";
   if(h>=12){ampm="PM";} if(h>12){h-=12;} if(h==0){h=12;}
   if(m<10){m="0"+m;}
   var colon=showColon?":":" "; showColon=!showColon;
   document.getElementById("clock").innerHTML=h+colon+m+" "+ampm;
-  document.getElementById("date").innerHTML=now.toDateString();
+  document.getElementById("date").innerHTML=n.toDateString();
 }
-setInterval(updateClock,1000); updateClock();
+setInterval(updateClock,1000);updateClock();
 
 function formatTime(d){
   var h=d.getHours(),m=d.getMinutes(),ampm="AM";
@@ -75,68 +112,71 @@ function formatTime(d){
   return h+":"+m+" "+ampm;
 }
 
-/* FIX: retry + fallback */
-function fetchJSON(url, success){
-  var xhr=new XMLHttpRequest();
-  xhr.open("GET",url,true);
-  xhr.onload=function(){
-    if(xhr.status===200){
-      success(JSON.parse(xhr.responseText));
-    }
-  };
-  xhr.onerror=function(){
-    document.getElementById("temp").innerHTML="--°F";
-  };
-  xhr.send();
+function cond(code){
+  if(code===0)return["Clear","☀️"];
+  if(code<=3)return["Partly Cloudy","⛅"];
+  if(code<=48)return["Fog","🌫"];
+  if(code<=67)return["Rain","🌧"];
+  if(code<=77)return["Snow","❄️"];
+  if(code<=82)return["Showers","🌦"];
+  if(code<=99)return["Storm","⛈"];
+  return["--",""];
 }
 
-/* TEMP */
-function updateCurrentTemp(){
+function fetchJSON(url,cb){
+  var x=new XMLHttpRequest();
+  x.open("GET",url,true);
+  x.onload=function(){if(x.status===200){cb(JSON.parse(x.responseText));}};
+  x.send();
+}
+
+/* CURRENT */
+function updateCurrent(){
   fetchJSON(
-    "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&temperature_unit=fahrenheit&timezone=auto",
-    function(data){
-      document.getElementById("temp").innerHTML=Math.round(data.current_weather.temperature)+"°F";
-      document.getElementById("updated").innerHTML="Updated "+formatTime(new Date());
-    }
-  );
+  "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&temperature_unit=fahrenheit&timezone=auto",
+  function(d){
+    var c=cond(d.current_weather.weathercode);
+    document.getElementById("temp").innerHTML=Math.round(d.current_weather.temperature)+"°F";
+    document.getElementById("conditions").innerHTML=c[1]+" "+c[0];
+    document.getElementById("wind").innerHTML="Wind "+Math.round(d.current_weather.windspeed)+" mph";
+    document.getElementById("updated").innerHTML="Updated "+formatTime(new Date());
+  });
 }
 
 /* FORECAST */
 function updateForecast(){
   fetchJSON(
-    "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
-    function(data){
-      var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],out="";
-      var t=new Date();
-      var todayStr=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
-      var startIndex=0;
-      for(var i=0;i<data.daily.time.length;i++){
-        if(data.daily.time[i]===todayStr){startIndex=i+1;break;}
-      }
-      for(var i=startIndex;i<startIndex+5;i++){
-        var d=new Date(data.daily.time[i]);
-        out+="<div class='day'><div class='dayname'>"+days[d.getDay()]+"</div>"+
-        "<div class='high'>"+Math.round(data.daily.temperature_2m_max[i])+"°</div>"+
-        "<div class='low'>"+Math.round(data.daily.temperature_2m_min[i])+"°</div></div>";
-      }
-      document.getElementById("forecast").innerHTML=out;
-      document.getElementById("forecastUpdated").innerHTML="Updated "+formatTime(new Date());
+  "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&timezone=auto",
+  function(d){
+    var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],out="";
+    var t=new Date();
+    var ts=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
+    var s=0;
+    for(var i=0;i<d.daily.time.length;i++){
+      if(d.daily.time[i]===ts){s=i+1;break;}
     }
-  );
+    for(var i=s;i<s+5;i++){
+      var da=new Date(d.daily.time[i]);
+      var c=cond(d.daily.weathercode[i]);
+      out+="<div class='day'>";
+      out+="<div class='dayname'>"+days[da.getDay()]+"</div>";
+      out+="<div class='icon'>"+c[1]+"</div>";
+      out+="<div class='high'>"+Math.round(d.daily.temperature_2m_max[i])+"°</div>";
+      out+="<div class='low'>"+Math.round(d.daily.temperature_2m_min[i])+"°</div>";
+      out+="</div>";
+    }
+    document.getElementById("forecast").innerHTML=out;
+    document.getElementById("forecastUpdated").innerHTML="Updated "+formatTime(new Date());
+  });
 }
 
-updateCurrentTemp();
+updateCurrent();
 updateForecast();
 
-setInterval(updateCurrentTemp,120000);
+setInterval(updateCurrent,120000);
 setInterval(updateForecast,14400000);
 
-var shift=0;
-setInterval(function(){
-  shift=(shift+1)%10;
-  document.body.style.transform="translate("+shift+"px,"+shift+"px)";
-},60000);
-
 </script>
+
 </body>
 </html>
