@@ -2,98 +2,76 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>ABQ Mission Clock FINAL</title>
+<title>ABQ Mission Clock FINAL v2</title>
 
 <style>
 body{
 background:black;color:white;font-family:Arial;text-align:center;margin:0;overflow:hidden;
 }
 
-/* container */
 #container{
 display:flex;
 flex-direction:column;
-justify-content:space-between;
+justify-content:center;
 height:100vh;
-padding:4px 0;
 }
 
 /* TOP */
-#city{color:#4da6ff;font-size:24px;margin:2px 0;}
-#temp{font-size:44px;margin:0;}
-#conditions{font-size:14px;color:#ccc;margin-top:2px;}
-#wind{font-size:12px;color:#aaa;}
-#updated{font-size:11px;color:#666;opacity:.6;margin-top:2px;}
+#city{color:#4da6ff;font-size:22px;margin-bottom:2px;}
+#temp{font-size:42px;margin:0;}
+#conditions{font-size:13px;color:#ccc;margin-top:2px;}
+#wind{font-size:11px;color:#aaa;}
+#updated{font-size:10px;color:#666;opacity:.6;margin-top:2px;}
 
 /* CLOCK */
-#middle{
-flex-grow:1;
-display:flex;
-flex-direction:column;
-justify-content:center;
-margin-top:-10px;
-}
-
 #clock{
-font-size:120px;
+font-size:135px;
 color:#39ff14;
+margin-top:5px;
 }
 
 #date{
-font-size:18px;
+font-size:16px;
 margin-top:-10px;
 }
 
 /* FORECAST */
 #forecastUpdated{
-font-size:11px;color:#666;opacity:.6;margin-bottom:2px;
+font-size:10px;color:#666;opacity:.6;margin-top:5px;
 }
 
 .day{
 display:inline-block;
-width:58px;
+width:55px;
 }
 
-.dayname{font-size:13px;}
-.icon{font-size:14px;}
-.high{color:#ff4444;font-size:14px;}
-.low{color:#66aaff;font-size:12px;}
+.dayname{font-size:12px;}
+.icon{font-size:13px;}
+.high{color:#ff4444;font-size:13px;}
+.low{color:#66aaff;font-size:11px;}
 </style>
 </head>
 
-<body onclick="goFullscreen()">
+<body>
 
 <div id="container">
 
-<div>
 <div id="city">Albuquerque</div>
 <div id="temp">--°F</div>
 <div id="conditions"></div>
 <div id="wind"></div>
 <div id="updated"></div>
-</div>
 
-<div id="middle">
 <div id="clock">--:--</div>
 <div id="date"></div>
-</div>
 
-<div>
 <div id="forecastUpdated"></div>
 <div id="forecast"></div>
-</div>
 
 </div>
 
 <script>
 
-function goFullscreen(){
-  var el=document.documentElement;
-  if(el.requestFullscreen){el.requestFullscreen();}
-  else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen();}
-}
-
-/* CLOCK */
 var showColon=true;
 function updateClock(){
   var n=new Date(),h=n.getHours(),m=n.getMinutes(),ampm="AM";
@@ -130,7 +108,6 @@ function fetchJSON(url,cb){
   x.send();
 }
 
-/* CURRENT */
 function updateCurrent(){
   fetchJSON(
   "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&temperature_unit=fahrenheit&timezone=auto",
@@ -143,7 +120,6 @@ function updateCurrent(){
   });
 }
 
-/* FORECAST */
 function updateForecast(){
   fetchJSON(
   "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&timezone=auto",
