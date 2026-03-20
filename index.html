@@ -2,155 +2,158 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>ABQ Mission Clock FINAL v2</title>
+<title>ABQ Mission Clock</title>
 
 <style>
+
 body{
-background:black;color:white;font-family:Arial;text-align:center;margin:0;overflow:hidden;
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+overflow:hidden;
 }
 
-#container{
-display:flex;
-flex-direction:column;
-justify-content:center;
-height:100vh;
+#city{
+color:#4da6ff;
+font-size:50px;
+margin-top:15px;
 }
 
-/* TOP */
-#city{color:#4da6ff;font-size:22px;margin-bottom:2px;}
-#temp{font-size:42px;margin:0;}
-#conditions{font-size:13px;color:#ccc;margin-top:2px;}
-#wind{font-size:11px;color:#aaa;}
-#updated{font-size:10px;color:#666;opacity:.6;margin-top:2px;}
+#temp{
+font-size:70px;
+margin-bottom:10px;
+}
 
-/* CLOCK */
 #clock{
-font-size:135px;
+font-size:170px;
 color:#39ff14;
-margin-top:5px;
 }
 
 #date{
-font-size:16px;
-margin-top:-10px;
+font-size:34px;
+margin-bottom:20px;
 }
 
-/* FORECAST */
-#forecastUpdated{
-font-size:10px;color:#666;opacity:.6;margin-top:5px;
+#forecast{
+position:absolute;
+bottom:20px;
+width:100%;
+text-align:center;
 }
 
 .day{
 display:inline-block;
-width:55px;
+width:110px;
 }
 
-.dayname{font-size:12px;}
-.icon{font-size:13px;}
-.high{color:#ff4444;font-size:13px;}
-.low{color:#66aaff;font-size:11px;}
+.dayname{
+font-size:22px;
+margin-bottom:5px;
+}
+
+.high{
+color:#ff4444;
+font-size:26px;
+}
+
+.low{
+color:#66aaff;
+font-size:22px;
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="container">
-
 <div id="city">Albuquerque</div>
 <div id="temp">--°F</div>
-<div id="conditions"></div>
-<div id="wind"></div>
-<div id="updated"></div>
 
 <div id="clock">--:--</div>
 <div id="date"></div>
 
-<div id="forecastUpdated"></div>
 <div id="forecast"></div>
-
-</div>
 
 <script>
 
-var showColon=true;
+/* CLOCK */
+
 function updateClock(){
-  var n=new Date(),h=n.getHours(),m=n.getMinutes(),ampm="AM";
-  if(h>=12){ampm="PM";} if(h>12){h-=12;} if(h==0){h=12;}
-  if(m<10){m="0"+m;}
-  var colon=showColon?":":" "; showColon=!showColon;
-  document.getElementById("clock").innerHTML=h+colon+m+" "+ampm;
-  document.getElementById("date").innerHTML=n.toDateString();
-}
-setInterval(updateClock,1000);updateClock();
 
-function formatTime(d){
-  var h=d.getHours(),m=d.getMinutes(),ampm="AM";
-  if(h>=12){ampm="PM";} if(h>12){h-=12;} if(h==0){h=12;}
-  if(m<10){m="0"+m;}
-  return h+":"+m+" "+ampm;
-}
+var now=new Date();
 
-function cond(code){
-  if(code===0)return["Clear","☀️"];
-  if(code<=3)return["Partly Cloudy","⛅"];
-  if(code<=48)return["Fog","🌫"];
-  if(code<=67)return["Rain","🌧"];
-  if(code<=77)return["Snow","❄️"];
-  if(code<=82)return["Showers","🌦"];
-  if(code<=99)return["Storm","⛈"];
-  return["--",""];
+var h=now.getHours();
+var m=now.getMinutes();
+
+var ampm="AM";
+
+if(h>=12){ampm="PM";}
+if(h>12){h=h-12;}
+if(h==0){h=12;}
+
+if(m<10){m="0"+m;}
+
+document.getElementById("clock").innerHTML=h+":"+m+" "+ampm;
+document.getElementById("date").innerHTML=now.toDateString();
+
 }
 
-function fetchJSON(url,cb){
-  var x=new XMLHttpRequest();
-  x.open("GET",url,true);
-  x.onload=function(){if(x.status===200){cb(JSON.parse(x.responseText));}};
-  x.send();
+setInterval(updateClock,1000);
+updateClock();
+
+
+/* WEATHER */
+
+var xhr=new XMLHttpRequest();
+
+xhr.open(
+"GET",
+"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
+true
+);
+
+xhr.onload=function(){
+
+var data=JSON.parse(xhr.responseText);
+
+/* CURRENT TEMP */
+
+document.getElementById("temp").innerHTML=
+Math.round(data.current_weather.temperature)+"°F";
+
+
+/* FORECAST */
+
+var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+var out="";
+
+for(var i=0;i<5;i++){
+
+var d=new Date(data.daily.time[i]);
+var day=days[d.getDay()];
+
+out+="<div class='day'>";
+
+out+="<div class='dayname'>"+day+"</div>";
+
+out+="<div class='high'>"+
+Math.round(data.daily.temperature_2m_max[i])+"°</div>";
+
+out+="<div class='low'>"+
+Math.round(data.daily.temperature_2m_min[i])+"°</div>";
+
+out+="</div>";
+
 }
 
-function updateCurrent(){
-  fetchJSON(
-  "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&temperature_unit=fahrenheit&timezone=auto",
-  function(d){
-    var c=cond(d.current_weather.weathercode);
-    document.getElementById("temp").innerHTML=Math.round(d.current_weather.temperature)+"°F";
-    document.getElementById("conditions").innerHTML=c[1]+" "+c[0];
-    document.getElementById("wind").innerHTML="Wind "+Math.round(d.current_weather.windspeed)+" mph";
-    document.getElementById("updated").innerHTML="Updated "+formatTime(new Date());
-  });
-}
+document.getElementById("forecast").innerHTML=out;
 
-function updateForecast(){
-  fetchJSON(
-  "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&timezone=auto",
-  function(d){
-    var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],out="";
-    var t=new Date();
-    var ts=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
-    var s=0;
-    for(var i=0;i<d.daily.time.length;i++){
-      if(d.daily.time[i]===ts){s=i+1;break;}
-    }
-    for(var i=s;i<s+5;i++){
-      var da=new Date(d.daily.time[i]);
-      var c=cond(d.daily.weathercode[i]);
-      out+="<div class='day'>";
-      out+="<div class='dayname'>"+days[da.getDay()]+"</div>";
-      out+="<div class='icon'>"+c[1]+"</div>";
-      out+="<div class='high'>"+Math.round(d.daily.temperature_2m_max[i])+"°</div>";
-      out+="<div class='low'>"+Math.round(d.daily.temperature_2m_min[i])+"°</div>";
-      out+="</div>";
-    }
-    document.getElementById("forecast").innerHTML=out;
-    document.getElementById("forecastUpdated").innerHTML="Updated "+formatTime(new Date());
-  });
-}
+};
 
-updateCurrent();
-updateForecast();
-
-setInterval(updateCurrent,120000);
-setInterval(updateForecast,14400000);
+xhr.send();
 
 </script>
 
