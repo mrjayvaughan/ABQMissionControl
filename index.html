@@ -22,70 +22,83 @@ justify-content:space-between;
 height:100vh;
 }
 
+/* TOP */
 #top{
-margin-top:10px;
+margin-top:5px;
 }
 
 #city{
 color:#4da6ff;
-font-size:50px;
+font-size:60px;
 }
 
 #temp{
-font-size:70px;
+font-size:85px;
 margin-bottom:0;
 }
 
 #updated{
-font-size:18px;
+font-size:20px;
 color:#888;
 }
 
+/* MIDDLE */
 #middle{
 flex-grow:1;
 display:flex;
 flex-direction:column;
 justify-content:flex-start;
-margin-top:20px; /* slightly higher than before */
+margin-top:5px;
 }
 
 #clock{
-font-size:170px;
+font-size:190px;
 color:#39ff14;
 }
 
 #date{
-font-size:34px;
+font-size:40px;
+margin-top:-10px;
 }
 
+/* BOTTOM */
 #bottom{
 margin-bottom:10px;
 }
 
 #forecastUpdated{
-font-size:16px;
+font-size:18px;
 color:#777;
 margin-bottom:5px;
 }
 
+#forecast{
+margin-top:-10px;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+/* FORECAST */
 .day{
 display:inline-block;
-width:110px;
+width:180px;
+margin:0 20px;
 }
 
 .dayname{
-font-size:22px;
-margin-bottom:5px;
+font-size:32px;
+margin-bottom:10px;
 }
 
 .high{
 color:#ff4444;
-font-size:26px;
+font-size:42px;
 }
 
 .low{
 color:#66aaff;
-font-size:22px;
+font-size:34px;
 }
 </style>
 </head>
