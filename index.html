@@ -5,7 +5,6 @@
 <title>ABQ Mission Clock</title>
 
 <style>
-
 body{
 background:black;
 color:white;
@@ -13,17 +12,41 @@ font-family:Arial;
 text-align:center;
 margin:0;
 overflow:hidden;
+transition: transform 1s linear;
+}
+
+#container{
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+height:100vh;
+}
+
+#top{
+margin-top:10px;
 }
 
 #city{
 color:#4da6ff;
 font-size:50px;
-margin-top:15px;
 }
 
 #temp{
 font-size:70px;
-margin-bottom:10px;
+margin-bottom:0;
+}
+
+#updated{
+font-size:18px;
+color:#888;
+}
+
+#middle{
+flex-grow:1;
+display:flex;
+flex-direction:column;
+justify-content:flex-start;
+margin-top:20px; /* slightly higher than before */
 }
 
 #clock{
@@ -33,14 +56,16 @@ color:#39ff14;
 
 #date{
 font-size:34px;
-margin-bottom:20px;
 }
 
-#forecast{
-position:absolute;
-bottom:20px;
-width:100%;
-text-align:center;
+#bottom{
+margin-bottom:10px;
+}
+
+#forecastUpdated{
+font-size:16px;
+color:#777;
+margin-bottom:5px;
 }
 
 .day{
@@ -62,98 +87,173 @@ font-size:26px;
 color:#66aaff;
 font-size:22px;
 }
-
 </style>
 </head>
 
-<body>
+<body onclick="goFullscreen()">
 
+<div id="container">
+
+<div id="top">
 <div id="city">Albuquerque</div>
 <div id="temp">--°F</div>
+<div id="updated"></div>
+</div>
 
+<div id="middle">
 <div id="clock">--:--</div>
 <div id="date"></div>
+</div>
 
+<div id="bottom">
+<div id="forecastUpdated"></div>
 <div id="forecast"></div>
+</div>
+
+</div>
 
 <script>
 
+/* FULLSCREEN */
+function goFullscreen(){
+  var el = document.documentElement;
+  if(el.requestFullscreen){ el.requestFullscreen(); }
+  else if(el.webkitRequestFullscreen){ el.webkitRequestFullscreen(); }
+}
+
+/* KEEP AWAKE */
+setInterval(function(){ window.scrollTo(0,1); },30000);
+
 /* CLOCK */
+var showColon = true;
 
 function updateClock(){
+  var now=new Date();
+  var h=now.getHours();
+  var m=now.getMinutes();
+  var ampm="AM";
 
-var now=new Date();
+  if(h>=12){ampm="PM";}
+  if(h>12){h=h-12;}
+  if(h==0){h=12;}
+  if(m<10){m="0"+m;}
 
-var h=now.getHours();
-var m=now.getMinutes();
+  var colon = showColon ? ":" : " ";
+  showColon = !showColon;
 
-var ampm="AM";
+  document.getElementById("clock").innerHTML =
+    h + colon + m + " " + ampm;
 
-if(h>=12){ampm="PM";}
-if(h>12){h=h-12;}
-if(h==0){h=12;}
-
-if(m<10){m="0"+m;}
-
-document.getElementById("clock").innerHTML=h+":"+m+" "+ampm;
-document.getElementById("date").innerHTML=now.toDateString();
-
+  document.getElementById("date").innerHTML =
+    now.toDateString();
 }
 
 setInterval(updateClock,1000);
 updateClock();
 
-
-/* WEATHER */
-
-var xhr=new XMLHttpRequest();
-
-xhr.open(
-"GET",
-"https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
-true
-);
-
-xhr.onload=function(){
-
-var data=JSON.parse(xhr.responseText);
-
-/* CURRENT TEMP */
-
-document.getElementById("temp").innerHTML=
-Math.round(data.current_weather.temperature)+"°F";
-
-
-/* FORECAST */
-
-var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-var out="";
-
-for(var i=0;i<5;i++){
-
-var d=new Date(data.daily.time[i]);
-var day=days[d.getDay()];
-
-out+="<div class='day'>";
-
-out+="<div class='dayname'>"+day+"</div>";
-
-out+="<div class='high'>"+
-Math.round(data.daily.temperature_2m_max[i])+"°</div>";
-
-out+="<div class='low'>"+
-Math.round(data.daily.temperature_2m_min[i])+"°</div>";
-
-out+="</div>";
-
+/* FORMAT TIME */
+function formatTime(d){
+  var h=d.getHours();
+  var m=d.getMinutes();
+  var ampm="AM";
+  if(h>=12){ampm="PM";}
+  if(h>12){h=h-12;}
+  if(h==0){h=12;}
+  if(m<10){m="0"+m;}
+  return h+":"+m+" "+ampm;
 }
 
-document.getElementById("forecast").innerHTML=out;
+/* TEMP */
+function updateCurrentTemp(){
+  var xhr=new XMLHttpRequest();
 
-};
+  xhr.open(
+    "GET",
+    "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&current_weather=true&temperature_unit=fahrenheit&timezone=auto",
+    true
+  );
 
-xhr.send();
+  xhr.onload=function(){
+    if(xhr.status===200){
+      var data=JSON.parse(xhr.responseText);
+      document.getElementById("temp").innerHTML =
+        Math.round(data.current_weather.temperature)+"°F";
+      document.getElementById("updated").innerHTML =
+        "Updated " + formatTime(new Date());
+    }
+  };
+
+  xhr.send();
+}
+
+/* FORECAST */
+function updateForecast(){
+  var xhr=new XMLHttpRequest();
+
+  xhr.open(
+    "GET",
+    "https://api.open-meteo.com/v1/forecast?latitude=35.0844&longitude=-106.6504&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto",
+    true
+  );
+
+  xhr.onload=function(){
+    if(xhr.status===200){
+      var data=JSON.parse(xhr.responseText);
+
+      var days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      var out="";
+
+      var today = new Date();
+      var year = today.getFullYear();
+      var month = ("0" + (today.getMonth() + 1)).slice(-2);
+      var dayNum = ("0" + today.getDate()).slice(-2);
+      var todayStr = year + "-" + month + "-" + dayNum;
+
+      var startIndex=0;
+
+      for(var i=0;i<data.daily.time.length;i++){
+        if(data.daily.time[i]===todayStr){
+          startIndex=i+1;
+          break;
+        }
+      }
+
+      for(var i=startIndex;i<startIndex+5;i++){
+        var d=new Date(data.daily.time[i]);
+        var day=days[d.getDay()];
+
+        out+="<div class='day'>";
+        out+="<div class='dayname'>"+day+"</div>";
+        out+="<div class='high'>"+
+        Math.round(data.daily.temperature_2m_max[i])+"°</div>";
+        out+="<div class='low'>"+
+        Math.round(data.daily.temperature_2m_min[i])+"°</div>";
+        out+="</div>";
+      }
+
+      document.getElementById("forecast").innerHTML=out;
+      document.getElementById("forecastUpdated").innerHTML =
+        "Updated " + formatTime(new Date());
+    }
+  };
+
+  xhr.send();
+}
+
+/* INIT */
+updateCurrentTemp();
+updateForecast();
+
+setInterval(updateCurrentTemp,120000);
+setInterval(updateForecast,14400000);
+
+/* BURN IN SHIFT */
+var shift=0;
+setInterval(function(){
+  shift=(shift+1)%10;
+  document.body.style.transform =
+    "translate("+shift+"px,"+shift+"px)";
+},60000);
 
 </script>
 
